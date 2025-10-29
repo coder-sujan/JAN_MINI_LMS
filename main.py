@@ -8,8 +8,12 @@ import os
 
 #run developmnet phase 
 
+from controllers.cli_controller import db_commands
 
-def create_app(developmnet):
+
+#testing, devlopment
+
+def create_app():
     app = Flask(__name__)
     print("Flask Server Started.")
     # app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URI")
@@ -19,6 +23,8 @@ def create_app(developmnet):
     
     
     db.init_app(app)
+    
+    app.register_blueprint(db_commands)
     return app
 
 
