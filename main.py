@@ -9,6 +9,7 @@ import os
 #run developmnet phase 
 
 from controllers.cli_controller import db_commands
+from controllers.student_controller import students_bp
 
 
 #testing, devlopment
@@ -22,9 +23,12 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI")
     
     
-    db.init_app(app)
     
+    #import for connection at top and register here...
+    db.init_app(app)
     app.register_blueprint(db_commands)
+    app.register_blueprint(students_bp)
+    
     return app
 
 
