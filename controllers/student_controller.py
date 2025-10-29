@@ -19,7 +19,11 @@ def get_students():
     students_list = db.session.scalars(stmt)
     #serialise it
     data = students_schema.dump(students_list)
+    
+    # print("the name of the students:", students_list.name)
     #return the jsonify(list)
+    
+    #imp
     if data:
         return jsonify(data)
     else:
