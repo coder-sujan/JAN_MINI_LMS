@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from init import db
 from models.student import Student, student_schema, students_schema
 
@@ -31,13 +31,16 @@ def get_students():
     
 # GET /students/id
 @students_bp.route("/<int:student_id>")
-def get_students(student_id):
+def get_a_student(student_id):
     #define the statement: Select * from students where id = student_id;
     stmt = db.select(Student).where(Student.student_id == student_id)
     #execture it
     student = db.session.scalar(stmt)
     #serialise it
     data = student_schema.dump(student)
+    
+    # print("")
+    
     if data:
         #return it
         return jsonify(data)
@@ -47,5 +50,44 @@ def get_students(student_id):
 
 
 # POST /students
+@students_bp.route("/", methods=["POST"])
+def create_students():
+    # get details from request body
+    body_data = request.get_json()
+    #create a student object with the request body data
+    email = body_data.get("email")
+    
+    stmt = db.select(Student).where(Student.email == email)
+    #adding to the session
+    student = db.session.scalar(stmt)
+    #checking the system with sam email add (validfation)
+    data = student_schema.dump(student)
+    
+    #display message with same email add isuues...
+    if data:
+        return {"message": f"The Student with email:{email} already exists. suggestions ()"}
+     
+    new_student = Student(
+        name = body_data.get("name"),
+        email = body_data.get("email"),
+        address = body_data.get("address")
+    )
+    #add to the session
+    db.session.add(new_student)
+    # Commit the session
+    db.session.commit()
+    #send Ack
+    #creating a new variable data and stoing everything in there
+    data = student_schema.dump(new_student)
+    #calling that data to convert with jsonify 
+    return jsonify(data), 201
+#fileds cannot be empty
+
+#Email unique error
+
+#default errors - unexpected error occured.
+
+#404 error occurd!
+    
 # PUT/PATCH /students/id
 # DELETE /students/id
