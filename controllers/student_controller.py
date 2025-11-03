@@ -89,5 +89,48 @@ def create_students():
 
 #404 error occurd!
     
-# PUT/PATCH /students/id
+
+
+
 # DELETE /students/id
+@students_bp.route("/<int:student_id>", methods=["DELETE"])
+def delete_student(student_id):
+    #find the std with id. : Select * from student where student_id = student_id
+    stmt = db.select(Student).where(Student.student_id == student_id)
+    student = db.session.scalar(stmt)
+    #if std exists:
+    if student:
+        
+       #detele
+       name = student.name
+       db.session.delete(student)
+       #commit
+       db.session.commit()
+       #return ack
+       return {"message": f"Student with name {student.name} deleted successfully"}, 200
+    else:
+       #retun ack
+       return {"message": f"Student with id: {student_id} does not exixt..."}, 404
+    
+    #else
+       # return ack
+       
+       
+       
+       
+# PUT/PATCH /students/id (EDIT the std details)
+
+@students_bp.route("/<int:student_id>", methods=["PUT", "PATCH"])
+def delete_student(student_id):
+    #Get the std from db first
+    
+    #define statemnet
+    #exc the stmt
+    
+    #if the std exists
+        #fetch the info from the request body
+        # make the changes
+        #commit to the db
+        # ack
+    #else
+        # ack 
