@@ -30,6 +30,22 @@ def get_students():
         return {"message": "No Records Found!. Add a student to get started with system..."}
     
 # GET /students/id
+@students_bp.route("/<int:student_id>")
+def get_students(student_id):
+    #define the statement: Select * from students where id = student_id;
+    stmt = db.select(Student).where(Student.student_id == student_id)
+    #execture it
+    student = db.session.scalar(stmt)
+    #serialise it
+    data = student_schema.dump(student)
+    if data:
+        #return it
+        return jsonify(data)
+    else:
+        return {"message": f"Student with id: {student_id} does not exist..."}
+        
+
+
 # POST /students
 # PUT/PATCH /students/id
 # DELETE /students/id
