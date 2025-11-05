@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from init import db
 from models.teacher import Teacher, teacher_schema, teachers_schema
 
+from sqlalchemy.exc import IntegrityError
 
 teachers_bp = Blueprint("teachers", __name__, url_prefix="/teachers")
 
@@ -58,7 +59,7 @@ def get_a_teacher(teacher_id):
         
         
 
-# POST /students
+# POST /teachers
 @teachers_bp.route("/", methods=["POST"])
 def create_teachers():
     # get details from request body
@@ -66,7 +67,11 @@ def create_teachers():
     #create a student object with the request body data
     # email = body_data.get("email")
     
-    stmt = db.select(Student).where(Student.email == email)
+    
+    # ERROR
+    # stmt = db.select(Student).where(Student.email == email)
+    
+    
     #adding to the session
     teacher = db.session.scalar(stmt)
     #checking the system with sam email add (validfation)
@@ -100,7 +105,7 @@ def create_teachers():
 
 
 
-# DELETE /students/id
+# DELETE /teachers/id
 @teachers_bp.route("/<int:teacher_id>", methods=["DELETE"])
 def delete_teacher(teacher_id):
     #find the std with id. : Select * from student where student_id = student_id
@@ -124,4 +129,37 @@ def delete_teacher(teacher_id):
        # return ack
        
        
-    
+
+# PUT/PATCH /teachers/id (EDIT the std details) updating the teacher
+
+@teachers_bp.route("/<int:teacher_id>", methods=["PUT", "PATCH"])
+def update_teacher(teacher_id):
+    #Get the std from db first
+    try:
+        #define statemnet
+        stmt = db.select(Teacher).where(Teacher.teacher_id == teacher_id)
+        #exc the stmt
+        teacher = db.session.scalar(stmt)
+        
+        #if the std exists
+        if teacher:
+            #fetch the info from the request body
+            body_data = request.get_json()
+            # make the changes (using a short circuit method) using both put and patch
+            # where put updates everything 
+            # patch updates specific key values
+            teacher.name = body_data.get("name", teacher.name)
+            teacher.department = body_data.get("department", teacher.department)
+            teacher.address = body_data.get("address", teacher.address)
+            
+            #commit to the db
+            db.session.commit()
+            # ack
+            return jsonify(teacher_schema.dump(teacher))
+        #else
+        else:
+            return {"message": f"Teacher with id: {teacher_id} does not exist"}, 404
+            # ack 
+    except IntegrityError as err:
+        return {"Email address is already in Use "}, 409
+       
