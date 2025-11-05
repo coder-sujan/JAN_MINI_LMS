@@ -108,7 +108,7 @@ def create_teachers():
 # DELETE /teachers/id
 @teachers_bp.route("/<int:teacher_id>", methods=["DELETE"])
 def delete_teacher(teacher_id):
-    #find the std with id. : Select * from student where student_id = student_id
+    #find the std with id. : Select * from teacher where teacher_id = teacher_id
     stmt = db.select(Teacher).where(Teacher.teacher_id == teacher_id)
     teacher = db.session.scalar(stmt)
     #if std exists:
