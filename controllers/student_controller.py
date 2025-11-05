@@ -120,12 +120,11 @@ def delete_student(student_id):
        
        
        
-# PUT/PATCH /students/id (EDIT the std details)
+# PUT/PATCH /students/id (EDIT the std details) updating the student
 
 @students_bp.route("/<int:student_id>", methods=["PUT", "PATCH"])
 def update_student(student_id):
     #Get the std from db first
-    
     try:
         #define statemnet
         stmt = db.select(Student).where(Student.student_id == student_id)
@@ -136,7 +135,6 @@ def update_student(student_id):
         if student:
             #fetch the info from the request body
             body_data = request.get_json()
-            
             # make the changes (using a short circuit method) using both put and patch
             # where put updates everything 
             # patch updates specific key values
