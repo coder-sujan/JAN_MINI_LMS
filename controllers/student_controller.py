@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, IntegrityError
 from init import db
 from models.student import Student, student_schema, students_schema
 
@@ -121,16 +121,34 @@ def delete_student(student_id):
 # PUT/PATCH /students/id (EDIT the std details)
 
 @students_bp.route("/<int:student_id>", methods=["PUT", "PATCH"])
-def delete_student(student_id):
+def update_student(student_id):
     #Get the std from db first
     
-    #define statemnet
-    #exc the stmt
-    
-    #if the std exists
-        #fetch the info from the request body
-        # make the changes
-        #commit to the db
-        # ack
-    #else
-        # ack 
+    try:
+        #define statemnet
+        stmt = db.select(Student).where(Student.student_id == student_id)
+        #exc the stmt
+        student = db.session.scalar(stmt)
+        
+        #if the std exists
+        if student:
+            #fetch the info from the request body
+            body_data = request.get_json()
+            
+            # make the changes (using a short circuit method) using both put and patch
+            # where put updates everything 
+            # patch updates specific key values
+            student.name = body_data.get("name", student.name)
+            student.email = body_data.get("email", student.email)
+            student.address = body_data.get("address", student.address)
+            
+            #commit to the db
+            db.session.commit()
+            # ack
+            return jsonify(student_schema.dump(student))
+        #else
+        else:
+            return {"message": f"Student with id: {student_id} does not exist"}, 404
+            # ack 
+    except IntegrityError as err:
+        return {"Email address is already in Use "}, 409

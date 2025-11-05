@@ -40,3 +40,10 @@ def seed_tables():
     #commit
     db.session.commit()
     print("Table Seeded!")
+    
+    
+#seed
+# @db_commands.cli.command("selectall")
+# def select_all():
+    
+    
