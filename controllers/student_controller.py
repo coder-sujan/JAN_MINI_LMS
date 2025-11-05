@@ -1,5 +1,7 @@
-from flask import Blueprint, jsonify, request, IntegrityError
+from flask import Blueprint, jsonify, request
 from init import db
+
+from sqlalchemy.exc import IntegrityError
 from models.student import Student, student_schema, students_schema
 
 
