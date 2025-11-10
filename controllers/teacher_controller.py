@@ -7,7 +7,6 @@ from sqlalchemy.exc import IntegrityError
 teachers_bp = Blueprint("teachers", __name__, url_prefix="/teachers")
 
 
-
 # CREATE - POST /teachers
 
 # READ - GET /teachers and get /teacher/id
@@ -24,8 +23,18 @@ teachers_bp = Blueprint("teachers", __name__, url_prefix="/teachers")
 
 @teachers_bp.route("/")
 def get_teachers():
+    
+    #Get the department name from URL 
+    department = request.args.get("department")
+    
+    if department:
+        #define the statement for Get All teachers: Select * From teachers Where department = 'something/sci/maths';
+        stmt = db.select(Teacher).where(Teacher.department == department)
+    else:
+        stmt = db.select(Teacher)
+    
     #define the stmt for GET ALL teacher: Select * From Teachers;
-    stmt = db.select(Teacher)
+    # stmt = db.select(Teacher)
     #execute it
     teachers_list = db.session.scalars(stmt)
     #serialise it
@@ -38,7 +47,7 @@ def get_teachers():
         return {"message": "No records found... Please Add or Seed a teacher to get the data.."}, 404
     
 
-
+#get teacher by id
 @teachers_bp.route("/<int:teacher_id>")
 def get_a_teacher(teacher_id):
     #define the statement: Select * from teachers where id = teacher_id;
