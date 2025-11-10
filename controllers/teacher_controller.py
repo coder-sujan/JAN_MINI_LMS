@@ -29,9 +29,9 @@ def get_teachers():
     
     if department:
         #define the statement for Get All teachers: Select * From teachers Where department = 'something/sci/maths';
-        stmt = db.select(Teacher).where(Teacher.department == department)
+        stmt = db.select(Teacher).where(Teacher.department == department).order_by(Teacher.teacher_id) 
     else:
-        stmt = db.select(Teacher)
+        stmt = db.select(Teacher).order_by(Teacher.teacher_id)
     
     #define the stmt for GET ALL teacher: Select * From Teachers;
     # stmt = db.select(Teacher)
@@ -73,28 +73,35 @@ def get_a_teacher(teacher_id):
 def create_teachers():
     # get details from request body
     body_data = request.get_json()
-    #create a student object with the request body data
+    #create a teacher object with the request body data
     # email = body_data.get("email")
     
     
     # ERROR
     # stmt = db.select(Student).where(Student.email == email)
-    
+    #define statemnet
+    #stmt = db.select(Teacher).where(Teacher.teacher_id == teacher_id)
     
     #adding to the session
-    teacher = db.session.scalar(stmt)
+    #teacher = db.session.scalar(stmt)
     #checking the system with sam email add (validfation)
-    data = teacher_schema.dump(teacher)
+    #data = teacher_schema.dump(teacher)
     
     #display message with same email add isuues...
     # if data:
     #     return {"message": f"The Teacher with email:{email} already exists. suggestions ()"}
      
-    new_teacher = Teacher(
-        name = body_data.get("name"),
-        department = body_data.get("department"),
-        address = body_data.get("address")
+    # new_teacher = Teacher(
+    #     name = body_data.get("name"),
+    #     department = body_data.get("department"),
+    #     address = body_data.get("address")
+    # )
+    
+    new_teacher = teacher_schema.load(
+        body_data,
+        session=db.session
     )
+    
     #add to the session
     db.session.add(new_teacher)
     # Commit the session

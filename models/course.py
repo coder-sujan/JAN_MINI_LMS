@@ -8,11 +8,11 @@ class Course(db.Model):
     
     course_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
-    course_id = db.Column(db.Integer, primary_key=True)
+    duration = db.Column(db.Float) 
     
     
     #foreign Key Addition / connecting teachers table here...
-    teacher_id = db.Column(db.Integer, db.ForeignKey("techers.teacher_id"), nullable =False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.teacher_id"), nullable =False)
     
     
 class CourseSchema(SQLAlchemyAutoSchema):
