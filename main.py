@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify, url_for
 
 from init import db
 import os
@@ -35,15 +35,39 @@ def create_app():
     app.register_blueprint(courses_bp)
     app.register_blueprint(enrolments_bp)
     
+   # --- Default route that lists useful links ---
+    @app.route("/")
+    def home():
+        def link(endpoint, **values):
+            try:
+                return url_for(endpoint, _external=True, **values)
+            except Exception:
+                return None
+
+        routes = {
+            "message": "Hey Welcome to the MINI LMS",
+            "endpoints": {
+                "students": {
+                    "list": link("students.get_students"),
+                    "create": link("students.create_student"),
+                },
+                "teachers": {
+                    "list": link("teachers.get_teachers"),
+                },
+                "courses": {
+                    "list": link("courses.get_courses"),
+                },
+                "enrolments": {
+                    "list": link("enrolments.get_enrolments"),
+                },
+                "staus": link("myapistatus"),
+            }
+        }
+        return jsonify(routes)
+
+    #app status check......
+    @app.route("/myapistatus")
+    def status():
+        return jsonify({"status": "ok"})
+
     return app
-
-
-
-
-#testing phase
-
-
-
-#deploymnet phase
-
-
