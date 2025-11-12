@@ -2,9 +2,9 @@ from flask import Flask
 
 from init import db
 import os
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 
 #run developmnet phase 
 
