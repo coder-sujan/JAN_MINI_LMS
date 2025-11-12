@@ -65,8 +65,15 @@ def seed_tables():
         ), Course(
         name="Science",
         duration=3,
-        teacher_id = teachers[1].teacher_id)
-    
+        teacher_id = teachers[1].teacher_id),
+        Course(
+        name="Maths",
+        duration=3,
+        teacher_id = teachers[1].teacher_id),
+        Course(
+        name="Biology",
+        duration=3,
+        teacher_id = teachers[0].teacher_id)
         ]
     
     

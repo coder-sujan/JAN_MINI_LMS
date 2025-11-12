@@ -1,181 +1,184 @@
 from flask import Blueprint, jsonify, request
+from sqlalchemy.exc import IntegrityError
+from psycopg2 import errorcodes
+from marshmallow import ValidationError
+
 from init import db
+from models.teacher import Teacher
+# from schemas.schemas import teacher_schema, teachers_schema (can create seperate folder and add all the schemas)
 from models.teacher import Teacher, teacher_schema, teachers_schema
 
-from sqlalchemy.exc import IntegrityError
 
 teachers_bp = Blueprint("teachers", __name__, url_prefix="/teachers")
 
+# CREATE - POST /
+# READ - GET / AND GET /id
+# UPDATE - PUT/PATCH /id
+# DELETE - DELETE /id
 
-# CREATE - POST /teachers
-
-# READ - GET /teachers and get /teacher/id
-
-
-# UPDATE - PUT/PATCH /teachers/id
-
-
-# DELETE - DELETE /teachers/id
-
-
-
-# READ - GET /teachers and get /teacher/id
-
+# READ - GET /
 @teachers_bp.route("/")
 def get_teachers():
-    
-    #Get the department name from URL 
+    # Get the department name from the URL
     department = request.args.get("department")
-    
+
     if department:
-        #define the statement for Get All teachers: Select * From teachers Where department = 'something/sci/maths';
-        stmt = db.select(Teacher).where(Teacher.department == department).order_by(Teacher.teacher_id) 
+        # Define the statement for GET All teacher: SELECT * FROM teachers WHERE department='something';
+        stmt = db.select(Teacher).where(Teacher.department == department).order_by(Teacher.teacher_id)
     else:
+        # Define the statement for GET All teacher: SELECT * FROM teachers
         stmt = db.select(Teacher).order_by(Teacher.teacher_id)
-    
-    #define the stmt for GET ALL teacher: Select * From Teachers;
-    # stmt = db.select(Teacher)
-    #execute it
+    # Execute it
     teachers_list = db.session.scalars(stmt)
-    #serialise it
+
+    # Serialise it
     data = teachers_schema.dump(teachers_list)
-    
+
     if data:
-        #return the jsonify(list of teachers)
+        # Return the jsonify(list)
         return jsonify(data)
     else:
-        return {"message": "No records found... Please Add or Seed a teacher to get the data.."}, 404
+        return {"message": "No records found. Add a teacher to get started."}, 404
     
-
-#get teacher by id
+# READ - GET /teacher_id
 @teachers_bp.route("/<int:teacher_id>")
 def get_a_teacher(teacher_id):
-    #define the statement: Select * from teachers where id = teacher_id;
+    # Define the statement: SELECT * FROM teachers WHERE id = teacher_id;
     stmt = db.select(Teacher).where(Teacher.teacher_id == teacher_id)
-    #execture it
+    # Execute it
     teacher = db.session.scalar(stmt)
-    #serialise it
+    # Serialise it
     data = teacher_schema.dump(teacher)
-    
-    # print("")
-    
     if data:
-        #return it
+        # Return it
         return jsonify(data)
     else:
-        return {"message": f"Teacher with id: {teacher_id} does not exist..."}
-        
-        
-        
+        return {"message": f"Teacher with id: {teacher_id} does not exist."}, 404
+    
 
-# POST /teachers
+# POST /
 @teachers_bp.route("/", methods=["POST"])
-def create_teachers():
-    # get details from request body
-    body_data = request.get_json()
-    #create a teacher object with the request body data
-    # email = body_data.get("email")
-    
-    
-    # ERROR
-    # stmt = db.select(Student).where(Student.email == email)
-    #define statemnet
-    #stmt = db.select(Teacher).where(Teacher.teacher_id == teacher_id)
-    
-    #adding to the session
-    #teacher = db.session.scalar(stmt)
-    #checking the system with sam email add (validfation)
-    #data = teacher_schema.dump(teacher)
-    
-    #display message with same email add isuues...
-    # if data:
-    #     return {"message": f"The Teacher with email:{email} already exists. suggestions ()"}
-     
-    # new_teacher = Teacher(
-    #     name = body_data.get("name"),
-    #     department = body_data.get("department"),
-    #     address = body_data.get("address")
-    # )
-    
-    new_teacher = teacher_schema.load(
-        body_data,
-        session=db.session
-    )
-    
-    #add to the session
-    db.session.add(new_teacher)
-    # Commit the session
-    db.session.commit()
-    #send Ack
-    #creating a new variable data and stoing everything in there
-    data = teacher_schema.dump(new_teacher)
-    #calling that data to convert with jsonify 
-    return jsonify(data), 201
-#fileds cannot be empty
+def create_teacher():
+    try:
+        # GET details from the REQUEST Body
+        body_data = request.get_json()
+        # Create a Teacher Object with the REQUEST Body data
 
-#Email unique error
+        # Method 1: Error handling for unique department constraint
+        # department = body_data.get("department")
 
-#default errors - unexpected error occured.
+        # stmt = db.select(Teacher).where(Teacher.department == department)
+        # teacher = db.session.scalar(stmt)
+        # data = teacher_schema.dump(teacher)
 
-#404 error occurd!
-
-
-
-# DELETE /teachers/id
+        # if data:
+        #     return {"message": f"The Teacher with department:{department} already exists."}, 409
+        
+        # new_teacher = Teacher(
+        #     name = body_data.get("name"),
+        #     department = body_data.get("department"),
+        #     address = body_data.get("address")
+        # )
+        
+        # schema.load() method to create the new teacher with validation rules implemented
+        new_teacher = teacher_schema.load(
+            body_data,
+            session=db.session
+        )
+        
+        # Add to the session
+        db.session.add(new_teacher)
+        # Commit the session
+        db.session.commit()
+        # Send ack
+        data = teacher_schema.dump(new_teacher)
+        return jsonify(data), 201
+    
+    except ValidationError as err:
+        return err.messages, 400
+    
+    except IntegrityError as err:
+        # if int(err.orig.pgcode) == 23502: # not null violation
+        if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION: # not null violation
+            return {"message": f"Required field: {err.orig.diag.column_name} cannot be null."}, 409
+        
+        if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION: # unique violation
+            return {"message": err.orig.diag.message_detail}, 409
+        
+        else:
+            return  {"message": "Integrity Error occured."}, 409
+    except:
+        return {"message": "Unexpected error occured."}
+    
+# DELETE /id
 @teachers_bp.route("/<int:teacher_id>", methods=["DELETE"])
 def delete_teacher(teacher_id):
-    #find the std with id. : Select * from teacher where teacher_id = teacher_id
+    # Find the teacher with id: SELECT * FROM teacher WHERE teacher_id=teacher_id
     stmt = db.select(Teacher).where(Teacher.teacher_id == teacher_id)
     teacher = db.session.scalar(stmt)
-    #if std exists:
+    # if teacher exists:
     if teacher:
-        
-       #detele
-       name = teacher.name
-       db.session.delete(teacher)
-       #commit
-       db.session.commit()
-       #return ack
-       return {"message": f"Teacher with name {teacher.name} deleted successfully"}, 200
+        # delete
+        # name = teacher.name
+        db.session.delete(teacher)
+        # commit
+        db.session.commit()
+        # return ack
+        return {"message": f"Teacher {teacher.name} deleted successfully."}
+    # else
     else:
-       #retun ack
-       return {"message": f"Teacher with id: {teacher} does not exixt..."}, 404
+        # return ack
+        return {"message": f"Teacher with id: {teacher_id} does not exist."}, 404
     
-    #else
-       # return ack
-       
-       
-
-# PUT/PATCH /teachers/id (EDIT the std details) updating the teacher
-
+# PUT/PATCH /id
 @teachers_bp.route("/<int:teacher_id>", methods=["PUT", "PATCH"])
 def update_teacher(teacher_id):
-    #Get the std from db first
+    # Method 1: In this method, we work on the update feature in a step-by-step approach (thorough)
+    # try:
+    #     # Get the teacher from the database
+    #     # Define the stmt
+    #     stmt = db.select(Teacher).where(Teacher.teacher_id == teacher_id)
+    #     # Execute the statement
+    #     teacher = db.session.scalar(stmt)
+    #     # if the teacher exists
+    #     if teacher:
+    #         # fetch the info from the request body
+    #         body_data = request.get_json()
+    #         # make the changes, short circuit method
+    #         teacher.name = body_data.get("name",teacher.name)
+    #         teacher.department = body_data.get("department",teacher.department)
+    #         teacher.address = body_data.get("address", teacher.address)
+    #         # commit to the db
+    #         db.session.commit()
+    
+    # Method 2: Here, we are implementing the schema.load() feature for some automation
+    # Get the teacher to update
+    teacher = db.session.get(Teacher, teacher_id)
+    # If the teacher does not exist:
+    if not teacher:
+        # Send an error message
+        return {"message": f"The teacher with id: {teacher_id} does not exist."}, 404
+    
+    # try:
     try:
-        #define statemnet
-        stmt = db.select(Teacher).where(Teacher.teacher_id == teacher_id)
-        #exc the stmt
-        teacher = db.session.scalar(stmt)
-        
-        #if the std exists
-        if teacher:
-            #fetch the info from the request body
-            body_data = request.get_json()
-            # make the changes (using a short circuit method) using both put and patch
-            # where put updates everything 
-            # patch updates specific key values
-            teacher.name = body_data.get("name", teacher.name)
-            teacher.department = body_data.get("department", teacher.department)
-            teacher.address = body_data.get("address", teacher.address)
-            
-            #commit to the db
-            db.session.commit()
-            # ack
-            return jsonify(teacher_schema.dump(teacher))
-        #else
-        else:
-            return {"message": f"Teacher with id: {teacher_id} does not exist"}, 404
-            # ack 
+        # getting the body data
+        body_data = request.get_json()
+        # Validate and Update the values
+        teacher = teacher_schema.load(
+            body_data,
+            instance=teacher,
+            session=db.session,
+            partial=True
+        )
+        # commit 
+        db.session.commit()
+        # ack   
+        return jsonify(teacher_schema.dump(teacher))
+        # else
+    
+    except ValidationError as err:
+        return err.messages, 400
+    
     except IntegrityError as err:
-        return {"Email address is already in Use "}, 409
-       
+            if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION: # unique violation
+                return {"message": err.orig.diag.message_detail}, 409
