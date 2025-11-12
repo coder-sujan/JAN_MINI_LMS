@@ -12,6 +12,7 @@ from controllers.cli_controller import db_commands
 from controllers.student_controller import students_bp
 from controllers.teacher_controller import teachers_bp
 from controllers.course_controller import courses_bp
+from controllers.enrolment_controller import enrolments_bp
 
 
 #testing, devlopment
@@ -32,6 +33,7 @@ def create_app():
     app.register_blueprint(students_bp)
     app.register_blueprint(teachers_bp)
     app.register_blueprint(courses_bp)
+    app.register_blueprint(enrolments_bp)
     
     return app
 
