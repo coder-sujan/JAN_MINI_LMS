@@ -14,14 +14,8 @@ class Course(db.Model):
     #foreign Key Addition / connecting teachers table here...
     teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.teacher_id"), nullable =False)
     
+     # back_populates
+    teacher = db.relationship("Teacher", back_populates="courses")
+    enrolments = db.relationship("Enrolment", back_populates="course")
     
-class CourseSchema(SQLAlchemyAutoSchema):
-    class Meta:
-        model = Course
-        load_instance = True
-        include_fk = True
-        
-
-#object defined 
-course_schema = CourseSchema()
-courses_schema = CourseSchema(many = True)
+    

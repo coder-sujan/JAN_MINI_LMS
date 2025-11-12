@@ -8,18 +8,11 @@ class Student(db.Model):
     name = db.Column(db.String(100), nullable = False)
     email = db.Column(db.String(100), nullable = False, unique=True)
     address = db.Column(db.String(100))
+    
+    # Define relationships
+    enrolments = db.relationship("Enrolment", back_populates="student", cascade = "all, delete")
   
 
-#Student Schema 
 
-class StudentSchema(SQLAlchemyAutoSchema):
-    class Meta:
-        model = Student
-        load_instance = True
-        
-
-#object defined 
-student_schema = StudentSchema()
-students_schema = StudentSchema(many = True)
 
     

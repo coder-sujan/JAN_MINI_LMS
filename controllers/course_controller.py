@@ -5,8 +5,8 @@ from psycopg2 import errorcodes
 
 from init import db
 from models.course import Course
-# from schemas.schemas import course_schema, courses_schema (can create seperate folder and add all the schemas)
-from models.course import Course, course_schema, courses_schema
+from schemas.schemas import course_schema, courses_schema 
+# from models.course import Course, course_schema, courses_schema
 
 
 courses_bp = Blueprint("courses", __name__, url_prefix="/courses")

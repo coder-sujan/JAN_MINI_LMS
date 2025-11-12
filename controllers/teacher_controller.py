@@ -5,8 +5,8 @@ from marshmallow import ValidationError
 
 from init import db
 from models.teacher import Teacher
-# from schemas.schemas import teacher_schema, teachers_schema (can create seperate folder and add all the schemas)
-from models.teacher import Teacher, teacher_schema, teachers_schema
+from schemas.schemas import teacher_schema, teachers_schema 
+# from models.teacher import Teacher, teacher_schema, teachers_schema
 
 
 teachers_bp = Blueprint("teachers", __name__, url_prefix="/teachers")

@@ -1,154 +1,137 @@
 from flask import Blueprint, jsonify, request
-from init import db
-
 from sqlalchemy.exc import IntegrityError
-from models.student import Student, student_schema, students_schema
+from psycopg2 import errorcodes
 
+from init import db
+from models.student import Student
+from schemas.schemas import student_schema, students_schema
 
 students_bp = Blueprint("students", __name__, url_prefix="/students")
 
-
-
-# Our Routesto be defined....
-
-# GET /students
-
+# Routes to be defined
+# GET /
 @students_bp.route("/")
 def get_students():
-    #first define a statement: Select * from students;
+    # Define a statement: SELECT * FROM students;
     stmt = db.select(Student)
-    #execute it
+    # Execute it
     students_list = db.session.scalars(stmt)
-    #serialise it
+    # Serialise it
     data = students_schema.dump(students_list)
     
-    # print("the name of the students:", students_list.name)
-    #return the jsonify(list)
-    
-    #imp
+    # Quick Python brain-teaser exercise
+    print("The name of the students:", [student["name"] for student in data])
+
     if data:
+        # Return the jsonify(list)
         return jsonify(data)
     else:
-        return {"message": "No Records Found!. Add a student to get started with system..."}
-    
-# GET /students/id
+        return {"message": "No records found. Add a student to get started."}, 404
+
+# GET /id
 @students_bp.route("/<int:student_id>")
 def get_a_student(student_id):
-    #define the statement: Select * from students where id = student_id;
+    # Define the statement: SELECT * FROM students WHERE id = student_id;
     stmt = db.select(Student).where(Student.student_id == student_id)
-    #execture it
+    # Execute it
     student = db.session.scalar(stmt)
-    #serialise it
+    # Serialise it
     data = student_schema.dump(student)
-    
-    # print("")
-    
     if data:
-        #return it
+        # Return it
         return jsonify(data)
     else:
-        return {"message": f"Student with id: {student_id} does not exist..."}
-        
+        return {"message": f"Student with id: {student_id} does not exist."}, 404
 
-
-# POST /students
+# POST /
 @students_bp.route("/", methods=["POST"])
-def create_students():
-    # get details from request body
-    body_data = request.get_json()
-    #create a student object with the request body data
-    email = body_data.get("email")
-    
-    stmt = db.select(Student).where(Student.email == email)
-    #adding to the session
-    student = db.session.scalar(stmt)
-    #checking the system with sam email add (validfation)
-    data = student_schema.dump(student)
-    
-    #display message with same email add isuues...
-    if data:
-        return {"message": f"The Student with email:{email} already exists. suggestions ()"}
-     
-    new_student = Student(
-        name = body_data.get("name"),
-        email = body_data.get("email"),
-        address = body_data.get("address")
-    )
-    #add to the session
-    db.session.add(new_student)
-    # Commit the session
-    db.session.commit()
-    #send Ack
-    #creating a new variable data and stoing everything in there
-    data = student_schema.dump(new_student)
-    #calling that data to convert with jsonify 
-    return jsonify(data), 201
-#fileds cannot be empty
+def create_student():
+    try:
+        # GET details from the REQUEST Body
+        body_data = request.get_json()
+        # Create a Student Object with the REQUEST Body data
 
-#Email unique error
+        # Method 1: Error handling for unique email constraint
+        # email = body_data.get("email")
 
-#default errors - unexpected error occured.
+        # stmt = db.select(Student).where(Student.email == email)
+        # student = db.session.scalar(stmt)
+        # data = student_schema.dump(student)
 
-#404 error occurd!
-    
+        # if data:
+        #     return {"message": f"The Student with email:{email} already exists."}, 409
+        
+        new_student = Student(
+            name = body_data.get("name"),
+            email = body_data.get("email"),
+            address = body_data.get("address")
+        )
+        # Add to the session
+        db.session.add(new_student)
+        # Commit the session
+        db.session.commit()
+        # Send ack
+        data = student_schema.dump(new_student)
+        return jsonify(data), 201
+    except IntegrityError as err:
+        # if int(err.orig.pgcode) == 23502: # not null violation
+        if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION: # not null violation
+            return {"message": f"Required field: {err.orig.diag.column_name} cannot be null."}, 409
+        
+        if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION: # unique violation
+            return {"message": err.orig.diag.message_detail}, 409
+        
+        else:
+            return  {"message": "Integrity Error occured."}, 409
+    except:
+        return {"message": "Unexpected error occured."}
 
-
-
-# DELETE /students/id
+# DELETE /id
 @students_bp.route("/<int:student_id>", methods=["DELETE"])
 def delete_student(student_id):
-    #find the std with id. : Select * from student where student_id = student_id
+    # Find the student with id: SELECT * FROM student WHERE student_id=student_id
     stmt = db.select(Student).where(Student.student_id == student_id)
     student = db.session.scalar(stmt)
-    #if std exists:
+    # if student exists:
     if student:
-        
-       #detele
-       name = student.name
-       db.session.delete(student)
-       #commit
-       db.session.commit()
-       #return ack
-       return {"message": f"Student with name {student.name} deleted successfully"}, 200
+        # delete
+        # name = student.name
+        db.session.delete(student)
+        # commit
+        db.session.commit()
+        # return ack
+        return {"message": f"Student {student.name} deleted successfully."}
+    # else
     else:
-       #retun ack
-       return {"message": f"Student with id: {student_id} does not exixt..."}, 404
-    
-    #else
-       # return ack
-       
-       
-       
-       
-# PUT/PATCH /students/id (EDIT the std details) updating the student
+        # return ack
+        return {"message": f"Student with id: {student_id} does not exist."}, 404
 
+
+# PUT/PATCH /id
 @students_bp.route("/<int:student_id>", methods=["PUT", "PATCH"])
 def update_student(student_id):
-    #Get the std from db first
     try:
-        #define statemnet
+        # Get the student from the database
+        # Define the stmt
         stmt = db.select(Student).where(Student.student_id == student_id)
-        #exc the stmt
+        # Execute the statement
         student = db.session.scalar(stmt)
-        
-        #if the std exists
+        # if the student exists
         if student:
-            #fetch the info from the request body
+            # fetch the info from the request body
             body_data = request.get_json()
-            # make the changes (using a short circuit method) using both put and patch
-            # where put updates everything 
-            # patch updates specific key values
-            student.name = body_data.get("name", student.name)
-            student.email = body_data.get("email", student.email)
+            # make the changes, short circuit method
+            student.name = body_data.get("name",student.name)
+            student.email = body_data.get("email",student.email)
             student.address = body_data.get("address", student.address)
-            
-            #commit to the db
+            # commit to the db
             db.session.commit()
             # ack
             return jsonify(student_schema.dump(student))
-        #else
+        # else
         else:
-            return {"message": f"Student with id: {student_id} does not exist"}, 404
-            # ack 
+            # ack message
+            return {"message": f"Student with id: {student_id} does not exist."}, 404
     except IntegrityError as err:
-        return {"Email address is already in Use "}, 409
+            if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION: # unique violation
+                return {"message": err.orig.diag.message_detail}, 409

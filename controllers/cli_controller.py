@@ -3,89 +3,103 @@ from init import db
 from models.student import Student
 from models.teacher import Teacher
 from models.course import Course
+from models.enrolment import Enrolment
 
-db_commands = Blueprint("db", __name__) 
-
-
-#CLI commands
-#Create
+db_commands = Blueprint("db", __name__)
 
 @db_commands.cli.command("create")
 def create_tables():
     db.create_all()
-    print("Tables Created!!")
-    
-    
-#drop
+    print("Tables created.")
+
 @db_commands.cli.command("drop")
 def drop_tables():
     db.drop_all()
-    print("Tables Dropped!!")
+    print("Tables dropped.")
 
-
-#seed
 @db_commands.cli.command("seed")
 def seed_tables():
-    
-    #create an instance of the Model first
+    # Create an instance of the Model
     students = [Student(
+        name="Alice",
+        email="alice@email.com",
+        address="Syd"
+    ), Student(
         name="Bob",
-        email="bob@gmail.com",
-        address ="Syd"
-        ), Student(
-        name="Jack",
-        email="jack@gmail.com",
-        )]
-    
-    #adding to the session
+        email="bob@email.com"
+    )]
+    # Add to the session
     db.session.add_all(students)
-    
-    
-    teachers = [Teacher(
-        name="Teacher 1",
-        department="IT",
-        address ="Mel"
+
+    teachers = [
+        Teacher(
+            name="Teacher 1",
+            department="Science",
+            address="Syd"
         ), Teacher(
-        name="Teacher 2",
-        department="Science",
-        address ="SYD"
-        )]
+            name="Teacher 2",
+            department="Management",
+            address="Bris"
+        )
+    ]
     
-    
-    #Add the teachers into to the session
+    # Add the teachers info to the session
     db.session.add_all(teachers)
-    
+
+    # Commit
     db.session.commit()
-    
+
     courses = [
         Course(
-        name="Computer Science",
-        duration=3,
-        teacher_id = teachers[0].teacher_id 
-        ), Course(
-        name="Science",
-        duration=3,
-        teacher_id = teachers[1].teacher_id),
-        Course(
-        name="Maths",
-        duration=3,
-        teacher_id = teachers[1].teacher_id),
-        Course(
-        name="Biology",
-        duration=3,
-        teacher_id = teachers[0].teacher_id)
-        ]
-    
-    
-    #Add the coures into to the session
+            name="Physics",
+            duration=3,
+            teacher_id=teachers[0].teacher_id
+        ),
+                Course(
+            name="Chemistry",
+            duration=3,
+            teacher_id=teachers[0].teacher_id
+        ),        Course(
+            name="Biology",
+            duration=3,
+            teacher_id=teachers[0].teacher_id
+        ),        Course(
+            name="Mathematics",
+            duration=3,
+            teacher_id=teachers[1].teacher_id
+        ),        Course(
+            name="Accounting",
+            duration=3,
+            teacher_id=teachers[1].teacher_id
+        )
+    ]
+
+    # Add the courses info to the session
     db.session.add_all(courses)
-    
-    
-    #commit
-    db.session.commit() 
-    print("Table Seeded!") 
-    
-    
-#select
-# @db_commands.cli.command("selectall")
-# def select_all():
+
+    # Commit
+    db.session.commit()
+
+    enrolments = [
+        Enrolment(
+            enrolment_date="2025-09-28",
+            student_id = students[0].student_id,
+            course_id = courses[0].course_id
+        ),
+        Enrolment(
+            enrolment_date="2025-09-28",
+            student_id = students[1].student_id,
+            course_id = courses[1].course_id
+        ),
+        Enrolment(
+            enrolment_date="2025-09-28",
+            student_id = students[0].student_id,
+            course_id = courses[1].course_id
+        )
+    ]
+
+    db.session.add_all(enrolments)
+
+    db.session.commit()
+
+    print("Tables seeded.")
